@@ -9,8 +9,8 @@ import com.corbetta.convidados.repository.GuestRepository
 
 class GuestFormViewModel(application: Application) : AndroidViewModel(application) {
 
-    // Acesso a dados
-    private val repository = GuestRepository.getInstance(application.applicationContext)
+
+    private val repository = GuestRepository(application.applicationContext)
 
     private var _saveGuest = MutableLiveData<Boolean>()
     val saveGuest: LiveData<Boolean> = _saveGuest
@@ -22,7 +22,7 @@ class GuestFormViewModel(application: Application) : AndroidViewModel(applicatio
      * Salva convidado
      * */
     fun save(id: Int, name: String, presence: Boolean) {
-        val guest = GuestModel(id, name, presence)
+        val guest = GuestModel()
 
         if (id == 0) {
             _saveGuest.value = repository.save(guest)

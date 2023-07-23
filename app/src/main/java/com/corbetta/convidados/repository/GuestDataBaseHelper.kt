@@ -3,34 +3,42 @@ package com.corbetta.convidados.repository
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
-import com.corbetta.convidados.constants.DataBaseConstants
+import androidx.room.Database
+import androidx.room.Room
+import androidx.room.Room.databaseBuilder
+import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
+
+import com.corbetta.convidados.model.GuestModel
 
 
-// Aqui é so a conecção com o banco
-class GuestDataBaseHelper(context: Context) : SQLiteOpenHelper(context, NAME, null, VERSION) {
+@Database(entities = [GuestModel::class], version = 1)
+abstract class GuestDataBaseHelper : RoomDatabase() {
 
-    /**
-     * Método executado somente uma vez quando o acesso ao banco de dados é feito pela primeira vez
-     */
-    override fun onCreate(db: SQLiteDatabase) {
-        db.execSQL(CREATE_TABLE_GUEST)
-    }
-
-    /**
-     * Método executado quando a versão do DATABASE_VERSION é alterada
-     * Dessa maneira, a aplicação sabe que o banco de dados foi alterado e é necessário rodar o script de update
-     */
-    override fun onUpgrade(db: SQLiteDatabase?, oldVersion: Int, newVersion: Int) {}
+    abstract fun guestDAO(): GuestDAO
 
     companion object {
-        private const val VERSION = 1
-        private const val NAME = "Convidados.db"
+        private lateinit var INSTANCE: GuestDataBaseHelper
 
-        private const val CREATE_TABLE_GUEST =
-            ("create table " + DataBaseConstants.GUEST.TABLE_NAME + " ("
-                    + DataBaseConstants.GUEST.COLUMNS.ID + " integer primary key autoincrement, "
-                    + DataBaseConstants.GUEST.COLUMNS.NAME + " text, "
-                    + DataBaseConstants.GUEST.COLUMNS.PRESENCE + " integer);")
+        fun guestDataBase(context: Context): GuestDataBaseHelper {
+            if (!::INSTANCE.isInitialized) {
+                synchronized(GuestDataBaseHelper::class) {
+                    INSTANCE = databaseBuilder(context, GuestDataBaseHelper::class.java, "guestdb")
+                        .addMigrations(MIGRATION_1_2)
+                        .allowMainThreadQueries()
+                        .build()
+                }
+            }
+            return INSTANCE
+        }
+
+        private val MIGRATION_1_2: Migration = object : Migration(1, 2) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("DELETE FROM Guest")
+            }
+        }
     }
-
 }
+
+
